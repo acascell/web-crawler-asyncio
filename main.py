@@ -2,12 +2,13 @@ import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
 from textblob import TextBlob
+from typing import List, Dict, Any
 
 
-async def fetch_page(session, url):
+async def fetch_page(session: aiohttp.ClientSession, url: str) -> str:
     """Fetch the content of a page using aiohttp.
 
-    :param session: the aiohttp session
+    :param session: The aiohttp session
     :param url: the URL to fetch
     :return: the content of the page
     """
@@ -16,20 +17,22 @@ async def fetch_page(session, url):
         return await response.text()
 
 
-async def parse_content(html):
+async def parse_content(html: str) -> List[str]:
     """Parse the content of a page using BeautifulSoup.
 
     :param html: The HTML page
     :return: the parsed data
     """
 
-    soup = BeautifulSoup(html, 'html.parser')
+    soup = BeautifulSoup(html, "html.parser")
     # this might change per website check the actual div structure
-    review_texts = [review.text for review in soup.find_all('div', class_='text show-more__control')]
+    review_texts = [
+        review.text for review in soup.find_all("div", class_="text show-more__control")
+    ]
     return review_texts
 
 
-async def analyze_text(texts):
+async def analyze_text(texts: List[str]) -> Dict[str, Any]:
     """Analyze the sentiment of a list of texts using TextBlob.
 
     :param texts: The parsed data to pass to TextBlob
@@ -37,19 +40,23 @@ async def analyze_text(texts):
     """
 
     sentiments = [TextBlob(text).sentiment for text in texts]
-    average_polarity = sum([s.polarity for s in sentiments]) / len(sentiments) if sentiments else 0
-    average_subjectivity = sum([s.subjectivity for s in sentiments]) / len(sentiments) if sentiments else 0
+    average_polarity = (
+        sum([s.polarity for s in sentiments]) / len(sentiments) if sentiments else 0
+    )
+    average_subjectivity = (
+        sum([s.subjectivity for s in sentiments]) / len(sentiments) if sentiments else 0
+    )
     return {
-        'average_polarity': average_polarity,
-        'average_subjectivity': average_subjectivity,
-        'detailed_sentiments': sentiments
+        "average_polarity": average_polarity,
+        "average_subjectivity": average_subjectivity,
+        "detailed_sentiments": sentiments,
     }
 
 
-async def crawl(url):
+async def crawl(url: str) -> None:
     """Crawl a page, parse its content, and analyze the sentiment of the text.
 
-    :param url: the actual url to crawl
+    :param url: The actual url to crawl
     """
 
     async with aiohttp.ClientSession() as session:
@@ -59,14 +66,13 @@ async def crawl(url):
         print(f"Analysis results for {url}: {analysis}")
 
 
-async def main():
+async def main() -> None:
     """Gather all the tasks in the event loop."""
 
-    urls = [
-        'URLS_1', 'URLS_2', 'URLS_3'
-    ]
+    urls = ["URLS_1", "URLS_2", "URLS_3"]
     tasks = [crawl(url) for url in urls]
     await asyncio.gather(*tasks)
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
